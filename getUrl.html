@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Google Form URL Builder</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+body{
+    background:#0f172a;
+    color:white;
+    padding:40px 20px;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+}
+
+h1{
+    font-size:42px;
+    margin-bottom:10px;
+}
+
+.subtitle{
+    color:#94a3b8;
+    margin-bottom:30px;
+    line-height:1.6;
+}
+
+.card{
+    background:#1e293b;
+    border:1px solid #334155;
+    border-radius:18px;
+    padding:24px;
+    margin-bottom:24px;
+}
+
+.card h2{
+    margin-bottom:20px;
+    font-size:28px;
+}
+
+label{
+    display:block;
+    margin-top:18px;
+    margin-bottom:8px;
+    font-weight:bold;
+}
+
+input,
+select,
+textarea{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    background:#334155;
+    color:white;
+    font-size:15px;
+}
+
+textarea{
+    resize:vertical;
+    min-height:120px;
+}
+
+.buttons{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:20px;
+}
+
+button{
+    border:none;
+    border-radius:12px;
+    padding:14px 18px;
+    font-size:15px;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+button:hover{
+    transform:translateY(-2px);
+}
+
+.primary{
+    background:#3b82f6;
+    color:white;
+}
+
+.primary:hover{
+    background:#2563eb;
+}
+
+.secondary{
+    background:#10b981;
+    color:white;
+}
+
+.secondary:hover{
+    background:#059669;
+}
+
+.danger{
+    background:#ef4444;
+    color:white;
+}
+
+.danger:hover{
+    background:#dc2626;
+}
+
+.question{
+    background:#0f172a;
+    border:1px solid #334155;
+    border-radius:14px;
+    padding:20px;
+    margin-top:20px;
+}
+
+.question-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+}
+
+.question-title{
+    font-size:22px;
+    font-weight:bold;
+}
+
+.small{
+    margin-top:8px;
+    color:#94a3b8;
+    line-height:1.5;
+    font-size:14px;
+}
+
+#output{
+    background:#020617;
+    color:#22c55e;
+    border:1px solid #334155;
+}
+
+.accordion{
+    margin-bottom:14px;
+    border-radius:12px;
+    overflow:hidden;
+    border:1px solid #334155;
+}
+
+.accordion-header{
+    background:#0f172a;
+    padding:16px;
+    cursor:pointer;
+    font-weight:bold;
+    user-select:none;
+}
+
+.accordion-content{
+    display:none;
+    padding:18px;
+    background:#111827;
+    color:#cbd5e1;
+    line-height:1.7;
+}
+
+.accordion.active .accordion-content{
+    display:block;
+}
+
+@media(max-width:700px){
+
+    h1{
+        font-size:32px;
+    }
+
+    .question-top{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Google Form URL Builder</h1>
+
+    <p class="subtitle">
+        Create and edit custom URLs for your Google Form UI website.
+    </p>
+
+    <div class="card">
+
+        <h2>Instructions</h2>
+
+        <div class="accordion">
+
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                ▶ How to get Form ID
+            </div>
+
+            <div class="accordion-content">
+
+                Open Google Form preview.
+
+                <br><br>
+
+                Example:
+                <br>
+                https://docs.google.com/forms/d/e/1FAIpQLXXXXX/viewform
+
+                <br><br>
+
+                Copy the text between:
+                <br>
+
+                <strong>/e/</strong>
+                and
+                <strong>/viewform</strong>
+
+            </div>
+
+        </div>
+
+        <div class="accordion">
+
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                ▶ How to get Entry IDs
+            </div>
+
+            <div class="accordion-content">
+
+                • Open Google Form editor
+                <br>
+                • Click the 3 dots
+                <br>
+                • Press "Get pre-filled link"
+                <br>
+                • Fill fake answers
+                <br>
+                • Press "Get Link"
+                <br>
+                • Copy the URL
+
+                <br><br>
+
+                Example:
+                <br>
+
+                entry.486951529
+
+            </div>
+
+        </div>
+
+        <div class="accordion">
+
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                ▶ Dropdown Structure
+            </div>
+
+            <div class="accordion-content">
+
+                Dropdown questions MUST have exactly 4 parts:
+
+                <br><br>
+
+                Entry ID
+                <br>
+                Type
+                <br>
+                Question Title
+                <br>
+                Options
+
+                <br><br>
+
+                Example:
+                <br><br>
+
+                &q=entry.486951529|dropdown|What games do u usually play?|Platformer,Shooter,Puzzle,RPG
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Website Info</h2>
+
+        <label>Website Base URL</label>
+
+        <input
+            id="baseUrl"
+            placeholder="https://yourwebsite.com/index.html"
+        >
+
+        <label>Google Form ID</label>
+
+        <input
+            id="formId"
+            placeholder="1FAIpQLScAaBbCcDdEe"
+        >
+
+    </div>
+
+    <div class="card">
+
+        <h2>Import Existing Final URL</h2>
+
+        <label>Existing Final URL</label>
+
+        <textarea
+            id="existingUrl"
+            placeholder="Paste your already generated final URL..."
+        ></textarea>
+
+        <div class="buttons">
+
+            <button
+                class="primary"
+                onclick="importExistingFinalUrl()"
+            >
+                Import Final URL
+            </button>
+
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Import Pre-filled Google URL</h2>
+
+        <label>Google Pre-filled URL</label>
+
+        <textarea
+            id="prefilledUrl"
+            placeholder="Paste Google pre-filled URL..."
+        ></textarea>
+
+        <div class="buttons">
+
+            <button
+                class="primary"
+                onclick="importPrefilledUrl()"
+            >
+                Import Questions
+            </button>
+
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Questions</h2>
+
+        <div id="questions"></div>
+
+        <div class="buttons">
+
+            <button
+                class="primary"
+                onclick="addQuestion()"
+            >
+                + Add Question
+            </button>
+
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Final URL</h2>
+
+        <button
+            class="secondary"
+            onclick="generateFinalUrl()"
+        >
+            Generate URL
+        </button>
+
+        <textarea
+            id="output"
+            readonly
+            placeholder="Generated URL..."
+        ></textarea>
+
+        <div class="buttons">
+
+            <button
+                class="primary"
+                onclick="copyUrl()"
+            >
+                Copy URL
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+let questionIndex = 0;
+
+function toggleAccordion(element){
+
+    const accordion =
+        element.parentElement;
+
+    accordion.classList.toggle("active");
+
+}
+
+function addQuestion(data = {}){
+
+    questionIndex++;
+
+    const container =
+        document.getElementById("questions");
+
+    const div =
+        document.createElement("div");
+
+    div.className = "question";
+
+    div.id = "question_" + questionIndex;
+
+    div.innerHTML = `
+
+        <div class="question-top">
+
+            <div class="question-title">
+                Question ${questionIndex}
+            </div>
+
+            <button
+                class="danger"
+                onclick="removeQuestion(${questionIndex})"
+            >
+                Remove
+            </button>
+
+        </div>
+
+        <label>Entry ID</label>
+
+        <input
+            class="entryId"
+            placeholder="entry.123456789"
+            value="${data.entryId || ""}"
+        >
+
+        <label>Type</label>
+
+        <select class="type">
+
+            <option value="text">text</option>
+            <option value="dropdown">dropdown</option>
+            <option value="rating">rating</option>
+
+        </select>
+
+        <label>Question Title</label>
+
+        <input
+            class="title"
+            placeholder="What games do you play?"
+            value="${data.title || ""}"
+        >
+
+        <label>Extra</label>
+
+        <input
+            class="extra"
+            placeholder="Platformer,Shooter,RPG"
+            value="${data.extra || ""}"
+        >
+
+        <div class="small">
+
+            Dropdown options must be separated by commas.
+
+        </div>
+
+    `;
+
+    container.appendChild(div);
+
+    if(data.type){
+        div.querySelector(".type").value =
+            data.type;
+    }
+
+}
+
+function removeQuestion(id){
+
+    const element =
+        document.getElementById("question_" + id);
+
+    if(element){
+        element.remove();
+    }
+
+}
+
+function importPrefilledUrl(){
+
+    const url =
+        document.getElementById("prefilledUrl")
+        .value
+        .trim();
+
+    if(!url){
+
+        alert("Paste pre-filled URL first");
+
+        return;
+    }
+
+    try{
+
+        const parsed =
+            new URL(url);
+
+        const match =
+            url.match(/\/forms\/d\/e\/([^\/]+)\//);
+
+        if(match){
+
+            document.getElementById("formId").value =
+                match[1];
+
+        }
+
+        document.getElementById("questions").innerHTML =
+            "";
+
+        questionIndex = 0;
+
+        parsed.searchParams.forEach((value, key) => {
+
+            if(key.startsWith("entry.")){
+
+                addQuestion({
+                    entryId:key,
+                    type:"text",
+                    title:"",
+                    extra:""
+                });
+
+            }
+
+        });
+
+        if(questionIndex === 0){
+
+            alert("No entry IDs found");
+
+        }
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        alert("Invalid URL");
+
+    }
+
+}
+
+function importExistingFinalUrl(){
+
+    const url =
+        document.getElementById("existingUrl")
+        .value
+        .trim();
+
+    if(!url){
+
+        alert("Paste final URL first");
+
+        return;
+    }
+
+    try{
+
+        const parsed =
+            new URL(url);
+
+        const formId =
+            parsed.searchParams.get("formId");
+
+        if(formId){
+
+            document.getElementById("formId").value =
+                formId;
+
+        }
+
+        const cleanBase =
+            url.split("?")[0];
+
+        document.getElementById("baseUrl").value =
+            cleanBase;
+
+        document.getElementById("questions").innerHTML =
+            "";
+
+        questionIndex = 0;
+
+        const allQ =
+            parsed.searchParams.getAll("q");
+
+        allQ.forEach(q => {
+
+            const parts =
+                decodeURIComponent(q).split("|");
+
+            addQuestion({
+                entryId: parts[0] || "",
+                type: parts[1] || "text",
+                title: parts[2] || "",
+                extra: parts[3] || ""
+            });
+
+        });
+
+        if(allQ.length === 0){
+
+            alert("No questions found");
+
+        }
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        alert("Invalid URL");
+
+    }
+
+}
+
+function generateFinalUrl(){
+
+    const baseUrl =
+        document.getElementById("baseUrl")
+        .value
+        .trim();
+
+    const formId =
+        document.getElementById("formId")
+        .value
+        .trim();
+
+    if(!baseUrl || !formId){
+
+        alert("Fill Base URL and Form ID");
+
+        return;
+    }
+
+    let finalUrl =
+        baseUrl.split("?")[0]
+        + "?formId="
+        + encodeURIComponent(formId);
+
+    const questions =
+        document.querySelectorAll(".question");
+
+    questions.forEach(question => {
+
+        const entryId =
+            question.querySelector(".entryId")
+            .value
+            .trim();
+
+        const type =
+            question.querySelector(".type")
+            .value
+            .trim();
+
+        const title =
+            question.querySelector(".title")
+            .value
+            .trim();
+
+        const extra =
+            question.querySelector(".extra")
+            .value
+            .trim();
+
+        if(!entryId){
+            return;
+        }
+
+        /*
+            IMPORTANT:
+            Dropdown MUST have 4 parts.
+        */
+
+        let qValue =
+            entryId
+            + "|"
+            + type
+            + "|"
+            + title
+            + "|"
+            + extra;
+
+        finalUrl +=
+            "&q=" +
+            encodeURIComponent(qValue);
+
+    });
+
+    document.getElementById("output").value =
+        finalUrl;
+
+}
+
+function copyUrl(){
+
+    const output =
+        document.getElementById("output");
+
+    if(!output.value){
+
+        alert("Generate URL first");
+
+        return;
+    }
+
+    navigator.clipboard.writeText(output.value);
+
+    alert("Copied!");
+
+}
+
+addQuestion();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Blueprint Form</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #004d99; 
+      font-family: 'Architects Daughter', cursive, sans-serif;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .blueprint-container {
+      border: 4px solid white;
+      border-radius: 10px;
+      padding: 40px;
+      width: 90%;
+      max-width: 800px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+      position: relative;
+    }
+
+    h2 {
+      font-size: 2rem;
+      margin: 0 0 30px 0;
+      font-weight: normal;
+      letter-spacing: 1px;
+    }
+
+    .blueprint-btn {
+      background: transparent;
+      border: 3px solid white;
+      border-radius: 8px;
+      color: white;
+      padding: 12px 24px;
+      font-size: 1.2rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 20px;
+      display: inline-block; 
+    }
+
+    .blueprint-btn:hover {
+      background-color: white;
+      color: #004d99;
+    }
+
+    .text-input, .select-input {
+      width: 100%;
+      background: transparent;
+      border: 3px solid white;
+      border-radius: 8px;
+      color: white;
+      padding: 12px;
+      font-size: 1.2rem;
+      font-family: inherit;
+      box-sizing: border-box;
+      outline: none;
+    }
+
+.text-input::placeholder {
+  color: #ffffff99 !important;
+}
+
+    .select-input {
+      cursor: pointer;
+    }
+    
+    .select-input option {
+      color: #004d99;
+      background-color: white;
+    }
+
+    .rating-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center; 
+      width: 100%;
+    }
+
+    .stars-container {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 5px; 
+    }
+
+    .star {
+      width: 60px;
+      height: 60px;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .star:hover {
+      transform: scale(1.1);
+    }
+
+    .star-labels {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .star-label {
+      width: 60px;
+      text-align: center;
+      font-size: 1rem;
+    }
+
+    .blueprint-wrapper-inner {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 30px;
+    }
+
+    .tape-fixed-image {
+        position: relative;
+        flex-shrink: 0;
+        transform: rotate(-3deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid white;
+        padding: 10px;
+    }
+
+    .tape-fixed-image img {
+        max-width: 250px;
+        height: auto;
+    }
+
+    .tape-fixed-image::before, .tape-fixed-image::after {
+        content: '';
+        position: absolute;
+        width: 100px;
+        height: 25px;
+        background-color: rgba(255, 255, 255, 0.4); 
+        box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+
+    .tape-fixed-image::before {
+        top: -15px;
+        left: -40px;
+        transform: rotate(45deg);
+    }
+
+    .tape-fixed-image::after {
+        bottom: -15px;
+        right: -40px;
+        transform: rotate(45deg);
+    }
+    
+    .pagination-dots {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    .pagination-dot {
+      width: 15px;
+      height: 15px;
+      border: 2px solid white;
+      border-radius: 50%;
+      box-sizing: border-box;
+    }
+
+    .pagination-dot.filled {
+      background-color: #d3d3d3; 
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="blueprint-container" id="form-container">
+  </div>
+
+  <script>
+    const starEmpty = `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
+    const starFilled = `<svg viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
+    
+    let formId = '';
+    let questions = [];
+    let currentStep = 0;
+    let answers = {};
+    let hoveredRating = 0; 
+
+    function init() {
+      const params = new URLSearchParams(window.location.search);
+      formId = params.get('formId');
+      
+      const qParams = params.getAll('q');
+      if (qParams.length > 0) {
+        questions = qParams.map(q => {
+          const [entryId, type, title, ...optionsStr] = q.split('|');
+          
+          let imageUrl = '';
+          let dropdownOptions = [];
+
+          if(type === 'dropdown') {
+              dropdownOptions = optionsStr[0] ? optionsStr[0].split(',') : [];
+          } else if (type === 'rating' || type === 'text') {
+              imageUrl = optionsStr[0] || '';
+          }
+
+          return { entryId, type, title, imageUrl, options: dropdownOptions };
+        });
+      } else {
+        questions = [
+          { entryId: 'demo1', type: 'rating', title: 'Rate the game', imageUrl: '' },
+          { entryId: 'demo2', type: 'dropdown', title: 'Pick a genre', imageUrl: '', options: ['Platformer', 'RPG', 'Puzzle'] }
+        ];
+      }
+      render();
+    }
+
+    // --- NEW Bulletproof Star Logic ---
+    function handleRating(entryId, value) {
+        answers[entryId] = value;
+        handleStarLeave(entryId); // Lock in the visual state
+    }
+
+    function handleStarHover(entryId, value) {
+        hoveredRating = value;
+        renderStarIcons(entryId);
+    }
+
+    function handleStarLeave(entryId) {
+        hoveredRating = 0;
+        renderStarIcons(entryId);
+    }
+    // ----------------------------------
+
+    function nextStep() {
+      if (currentStep < questions.length - 1) {
+        currentStep++;
+        render();
+      } else {
+        submitForm();
+      }
+    }
+
+    async function submitForm() {
+      if (!formId) {
+        document.getElementById('form-container').innerHTML = `<h2>Complete!</h2><p>Provide a valid formId in the URL to submit.</p>`;
+        return;
+      }
+
+      const formData = new FormData();
+      for (const key in answers) {
+        formData.append(key, answers[key]);
+      }
+
+      const url = `https://docs.google.com/forms/d/e/${formId}/formResponse`;
+
+      try {
+        await fetch(url, { method: 'POST', mode: 'no-cors', body: formData });
+        document.getElementById('form-container').innerHTML = `<h2>Thanks!</h2><p>Your feedback was sent.</p>`;
+      } catch (error) {
+        
+        // --- NEW Fallback Email Logic ---
+        let emailBodyText = "Hey there! I had some trouble submitting the form, but here are my answers:\n\n";
+        
+        // Gather all the user's answers nicely
+        questions.forEach(q => {
+            const ans = answers[q.entryId] || "No answer provided";
+            emailBodyText += `• ${q.title}\n  Answer: ${ans}\n\n`;
+        });
+        
+        emailBodyText += "Have a great day! 🎮✨";
+        
+        // Encode the text so it works inside a URL link
+        const mailtoLink = `mailto:hrsi9080@gmail.com?subject=Form Fallback Submission&body=${encodeURIComponent(emailBodyText)}`;
+
+        document.getElementById('form-container').innerHTML = `
+            <h2>Uh oh! 🛠️</h2>
+            <p>Sorry, we had a problem sending your answers to the database.</p>
+            <p>But don't worry! You can send us an email with your answers directly.</p>
+            <a href="${mailtoLink}" style="text-decoration: none;">
+                <button class="blueprint-btn">Send via Email ✉️</button>
+            </a>
+        `;
+      }
+    }
+
+    function render() {
+      const container = document.getElementById('form-container');
+      const q = questions[currentStep];
+      const entryId = q.entryId;
+      
+      let html = `<div class="blueprint-wrapper-inner">`;
+
+      if (q.imageUrl) {
+          html += `
+              <div class="tape-fixed-image">
+                  <img src="${q.imageUrl}" alt="Context">
+              </div>
+          `;
+      }
+      
+      html += `<div style="flex-grow: 1; width: 100%;">`;
+      html += `<h2>${q.title}</h2>`;
+
+      // RATING INPUT
+      if (q.type === 'rating') {
+        html += `<div class="rating-wrapper">`;
+        html += `<div class="stars-container" onmouseleave="handleStarLeave('${entryId}')">`;
+        
+        for (let i = 1; i <= 5; i++) {
+          // Changed to onmouseenter to prevent event bubbling bugs
+          html += `<div class="star" id="star-${i}"
+                      onclick="handleRating('${entryId}', ${i})"
+                      onmouseenter="handleStarHover('${entryId}', ${i})">
+                   </div>`;
+        }
+        
+        html += `</div>`;
+        
+        html += `<div class="star-labels">`;
+        for (let i = 1; i <= 5; i++) {
+          html += `<div class="star-label">${i}</div>`;
+        }
+        html += `</div>`;
+        html += `</div>`; 
+        
+        html += `<button class="blueprint-btn" onclick="nextStep()">Next</button>`;
+      } 
+      
+      // TEXT INPUT
+      else if (q.type === 'text') {
+        const currentVal = answers[entryId] || '';
+        html += `
+          <input type="text" class="text-input" placeholder="Type here..." 
+                 value="${currentVal}"
+                 onchange="answers['${entryId}'] = this.value">
+          <button class="blueprint-btn" onclick="nextStep()">Next</button>
+        `;
+      } 
+      
+      // DROPDOWN INPUT
+      else if (q.type === 'dropdown') {
+        const selectedVal = answers[entryId] || '';
+        html += `<select class="select-input" onchange="answers['${entryId}'] = this.value">
+                  <option value="" disabled ${!selectedVal ? 'selected' : ''}>Choose...</option>`;
+        q.options.forEach(opt => {
+          html += `<option value="${opt}" ${selectedVal === opt ? 'selected' : ''}>${opt}</option>`;
+        });
+        html += `</select>
+                 <br>
+                 <button class="blueprint-btn" onclick="nextStep()">Next</button>`;
+      }
+
+      html += `</div>`; 
+      html += `</div>`; 
+
+      // PAGINATION DOTS
+      html += `<div class="pagination-dots">`;
+      questions.forEach((_, i) => {
+        const filledClass = i === currentStep ? 'filled' : '';
+        html += `<div class="pagination-dot ${filledClass}"></div>`;
+      });
+      html += `</div>`;
+
+      container.innerHTML = html;
+
+      if (q.type === 'rating') {
+        renderStarIcons(entryId);
+      }
+    }
+
+    function renderStarIcons(entryId) {
+        const savedRating = answers[entryId] || 0;
+        const effectiveRating = hoveredRating || savedRating; 
+
+        for (let i = 1; i <= 5; i++) {
+            const starDiv = document.getElementById(`star-${i}`);
+            if (starDiv) {
+                if (i <= effectiveRating) {
+                    starDiv.innerHTML = starFilled;
+                } else {
+                    starDiv.innerHTML = starEmpty;
+                }
+            }
+        }
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
