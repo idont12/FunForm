@@ -8,26 +8,40 @@
   <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap" rel="stylesheet">
   
   <style>
-    body {
+    /* Reset everything so it fills the iframe properly */
+    html, body {
       margin: 0;
       padding: 0;
+      width: 100%;
+      height: 100%;
       background-color: #004d99; 
       font-family: 'Architects Daughter', cursive, sans-serif;
       color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
+      overflow-x: hidden; /* Prevent horizontal scrollbars */
     }
 
+    /* Container is now the full screen */
     .blueprint-container {
-      border: 4px solid white;
-      border-radius: 10px;
-      padding: 40px;
-      width: 90%;
-      max-width: 800px;
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
-      position: relative;
+    border: 4px solid white;
+    border-radius: 10px;
+    padding: 30px;
+    width: calc(100% - 40px);
+    min-height: calc(100% - 40px);
+    min-width: 300px;
+    box-sizing: border-box;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 20px;
+    }
+
+    /* Wrapper to keep inner content somewhat contained but responsive */
+    .content-wrapper {
+        width: 100%;
+        max-width: 800px;
     }
 
     h2 {
@@ -69,10 +83,6 @@
       outline: none;
     }
 
-.text-input::placeholder {
-  color: #ffffff99 !important;
-}
-
     .select-input {
       cursor: pointer;
     }
@@ -111,7 +121,7 @@
       display: flex;
       justify-content: center;
       gap: 15px;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
 
     .star-label {
@@ -125,6 +135,7 @@
         flex-direction: row;
         align-items: flex-start;
         gap: 30px;
+        width: 100%;
     }
 
     .tape-fixed-image {
@@ -169,6 +180,7 @@
       justify-content: center;
       gap: 15px;
       margin-top: 30px;
+      width: 100%;
     }
 
     .pagination-dot {
@@ -181,6 +193,91 @@
 
     .pagination-dot.filled {
       background-color: #d3d3d3; 
+    }
+
+    /* --- Particle Animation CSS --- */
+    .particle {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 6px;
+      height: 6px;
+      background: white;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 100;
+      animation: shoot 1s ease-out forwards;
+    }
+
+    @keyframes shoot {
+      0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(0);
+        opacity: 0;
+      }
+    }
+
+    /* --- RESPONSIVE ADJUSTMENTS --- */
+    @media (max-width: 600px) {
+        /* Stack image on top of text for small widths */
+        .blueprint-wrapper-inner {
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .tape-fixed-image {
+            transform: rotate(-1deg);
+        }
+
+        .tape-fixed-image img {
+            max-width: 180px; 
+        }
+
+        .star-labels{
+          margin-bottom: 0;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        /* Shrink stars slightly for tiny screens */
+        .star {
+            width: 45px;
+            height: 45px;
+        }
+        .star-label {
+            width: 45px;
+        }
+        .stars-container, .star-labels {
+            gap: 5px;
+        }
+    }
+
+    /* Extra small adjustment for extreme min-sizes (like 300x150) */
+    @media (max-height: 400px), (max-width: 350px) {
+        .blueprint-container {
+            padding: 15px;
+            border-width: 2px;
+        }
+        .tape-fixed-image img {
+            max-width: 100px;
+        }
+        .tape-fixed-image::before, .tape-fixed-image::after {
+            width: 50px;
+            height: 15px;
+        }
+        h2 { font-size: 1.2rem; }
+        .star { width: 35px; height: 35px; }
+        .star-label { width: 35px; font-size: 0.8rem; }
+        .blueprint-btn { padding: 8px 16px; font-size: 1rem; }
+        .pagination-dots,.blueprint-btn {margin-top: 10px;}
     }
 
   </style>
@@ -208,7 +305,6 @@
       if (qParams.length > 0) {
         questions = qParams.map(q => {
           const [entryId, type, title, ...optionsStr] = q.split('|');
-          
           let imageUrl = '';
           let dropdownOptions = [];
 
@@ -217,7 +313,6 @@
           } else if (type === 'rating' || type === 'text') {
               imageUrl = optionsStr[0] || '';
           }
-
           return { entryId, type, title, imageUrl, options: dropdownOptions };
         });
       } else {
@@ -229,10 +324,9 @@
       render();
     }
 
-    // --- NEW Bulletproof Star Logic ---
     function handleRating(entryId, value) {
         answers[entryId] = value;
-        handleStarLeave(entryId); // Lock in the visual state
+        handleStarLeave(entryId); 
     }
 
     function handleStarHover(entryId, value) {
@@ -244,7 +338,6 @@
         hoveredRating = 0;
         renderStarIcons(entryId);
     }
-    // ----------------------------------
 
     function nextStep() {
       if (currentStep < questions.length - 1) {
@@ -255,9 +348,28 @@
       }
     }
 
+    // --- NEW: Fire Particles Function ---
+    function fireParticles() {
+      for (let i = 0; i < 40; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        document.body.appendChild(particle);
+        
+        // Random spread between -250px and +250px
+        const x = (Math.random() - 0.5) * 500; 
+        const y = (Math.random() - 0.5) * 500;
+        
+        particle.style.setProperty('--x', `${x}px`);
+        particle.style.setProperty('--y', `${y}px`);
+        
+        // Remove from DOM after animation completes
+        setTimeout(() => particle.remove(), 1000);
+      }
+    }
+
     async function submitForm() {
       if (!formId) {
-        document.getElementById('form-container').innerHTML = `<h2>Complete!</h2><p>Provide a valid formId in the URL to submit.</p>`;
+        document.getElementById('form-container').innerHTML = `<div class="content-wrapper" style="text-align:center;"><h2>Complete!</h2><p>Provide a valid formId in the URL to submit.</p></div>`;
         return;
       }
 
@@ -270,30 +382,36 @@
 
       try {
         await fetch(url, { method: 'POST', mode: 'no-cors', body: formData });
-        document.getElementById('form-container').innerHTML = `<h2>Thanks!</h2><p>Your feedback was sent.</p>`;
+        
+        document.getElementById('form-container').innerHTML = `
+            <div class="content-wrapper" style="text-align: center;">
+                <h2>Thanks! ✨</h2>
+                <p>Your feedback was successfully sent.</p>
+            </div>
+        `;
+        
+        // Trigger the visual effect!
+        fireParticles();
+
       } catch (error) {
-        
-        // --- NEW Fallback Email Logic ---
         let emailBodyText = "Hey there! I had some trouble submitting the form, but here are my answers:\n\n";
-        
-        // Gather all the user's answers nicely
         questions.forEach(q => {
             const ans = answers[q.entryId] || "No answer provided";
             emailBodyText += `• ${q.title}\n  Answer: ${ans}\n\n`;
         });
-        
         emailBodyText += "Have a great day! 🎮✨";
         
-        // Encode the text so it works inside a URL link
         const mailtoLink = `mailto:hrsi9080@gmail.com?subject=Form Fallback Submission&body=${encodeURIComponent(emailBodyText)}`;
 
         document.getElementById('form-container').innerHTML = `
-            <h2>Uh oh! 🛠️</h2>
-            <p>Sorry, we had a problem sending your answers to the database.</p>
-            <p>But don't worry! You can send us an email with your answers directly.</p>
-            <a href="${mailtoLink}" style="text-decoration: none;">
-                <button class="blueprint-btn">Send via Email ✉️</button>
-            </a>
+            <div class="content-wrapper" style="text-align: center;">
+                <h2>Uh oh! 🛠️</h2>
+                <p>Sorry, we had a problem sending your answers to the database.</p>
+                <p>But don't worry! You can send us an email with your answers directly.</p>
+                <a href="${mailtoLink}" style="text-decoration: none;">
+                    <button class="blueprint-btn">Send via Email ✉️</button>
+                </a>
+            </div>
         `;
       }
     }
@@ -303,7 +421,8 @@
       const q = questions[currentStep];
       const entryId = q.entryId;
       
-      let html = `<div class="blueprint-wrapper-inner">`;
+      let html = `<div class="content-wrapper">`;
+      html += `<div class="blueprint-wrapper-inner">`;
 
       if (q.imageUrl) {
           html += `
@@ -313,7 +432,7 @@
           `;
       }
       
-      html += `<div style="flex-grow: 1; width: 100%;">`;
+      html += `<div style="flex-grow: 1; width: 100%; text-align: center;">`;
       html += `<h2>${q.title}</h2>`;
 
       // RATING INPUT
@@ -322,7 +441,6 @@
         html += `<div class="stars-container" onmouseleave="handleStarLeave('${entryId}')">`;
         
         for (let i = 1; i <= 5; i++) {
-          // Changed to onmouseenter to prevent event bubbling bugs
           html += `<div class="star" id="star-${i}"
                       onclick="handleRating('${entryId}', ${i})"
                       onmouseenter="handleStarHover('${entryId}', ${i})">
@@ -330,7 +448,6 @@
         }
         
         html += `</div>`;
-        
         html += `<div class="star-labels">`;
         for (let i = 1; i <= 5; i++) {
           html += `<div class="star-label">${i}</div>`;
@@ -348,6 +465,7 @@
           <input type="text" class="text-input" placeholder="Type here..." 
                  value="${currentVal}"
                  onchange="answers['${entryId}'] = this.value">
+          <br>
           <button class="blueprint-btn" onclick="nextStep()">Next</button>
         `;
       } 
@@ -375,6 +493,7 @@
         html += `<div class="pagination-dot ${filledClass}"></div>`;
       });
       html += `</div>`;
+      html += `</div>`; // Close content-wrapper
 
       container.innerHTML = html;
 
