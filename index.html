@@ -56,7 +56,7 @@
       border: 3px solid white;
       border-radius: 8px;
       color: white;
-      padding: 12px 24px;
+      padding: 8px 20px;
       font-size: 1.2rem;
       font-family: inherit;
       cursor: pointer;
@@ -82,6 +82,10 @@
       box-sizing: border-box;
       outline: none;
     }
+
+    .text-input::placeholder {
+  color: #ffffff99 !important;
+}
 
     .select-input {
       cursor: pointer;
@@ -192,7 +196,89 @@
     }
 
     .pagination-dot.filled {
-      background-color: #d3d3d3; 
+      background-color: white; 
+    }
+
+    .endTitle{
+      margin-bottom: 0;
+    }
+
+    .email-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 43, 82, 0.72);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+      box-sizing: border-box;
+      animation: fadeIn 0.18s ease-out;
+    }
+
+    .email-modal-card {
+      width: min(100%, 520px);
+      border: 3px solid white;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.08));
+      box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.18), 0 18px 50px rgba(0, 0, 0, 0.25);
+      padding: 24px;
+      position: relative;
+    }
+
+    .email-modal-title {
+      font-size: 1.7rem;
+      margin: 0 0 10px 0;
+      text-align: center;
+    }
+
+    .email-modal-copy {
+      text-align: center;
+      margin: 0 0 22px 0;
+      line-height: 1.5;
+      font-size: 1.05rem;
+    }
+
+    .email-modal-actions {
+      display: grid;
+      gap: 12px;
+    }
+
+    .email-choice-btn {
+      width: 100%;
+      margin-top: 0;
+      padding: 12px 16px;
+      font-size: 1.1rem;
+      text-align: center;
+    }
+
+    .email-modal-footer {
+      display: flex;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .email-modal-close {
+      background: transparent;
+      border: 0;
+      color: white;
+      font: inherit;
+      cursor: pointer;
+      text-decoration: underline;
+      opacity: 0.9;
+    }
+
+    .email-choice-btn:focus-visible,
+    .email-modal-close:focus-visible,
+    .blueprint-btn:focus-visible {
+      outline: 3px solid #ffffff;
+      outline-offset: 3px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     /* --- Particle Animation CSS --- */
@@ -246,6 +332,7 @@
             text-align: center;
             margin-bottom: 15px;
         }
+        .blueprint-btn { padding: 6px 14px; font-size: 1rem; }
 
         /* Shrink stars slightly for tiny screens */
         .star {
@@ -276,7 +363,7 @@
         h2 { font-size: 1.2rem; }
         .star { width: 35px; height: 35px; }
         .star-label { width: 35px; font-size: 0.8rem; }
-        .blueprint-btn { padding: 8px 16px; font-size: 1rem; }
+        .blueprint-btn { padding: 6px 14px; font-size: 1rem; }
         .pagination-dots,.blueprint-btn {margin-top: 10px;}
     }
 
@@ -292,6 +379,7 @@
     const starFilled = `<svg viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
     
     let formId = '';
+    let proxyUrl = '';
     let questions = [];
     let currentStep = 0;
     let answers = {};
@@ -300,6 +388,7 @@
     function init() {
       const params = new URLSearchParams(window.location.search);
       formId = params.get('formId');
+      proxyUrl = params.get('proxyUrl') || '';
       
       const qParams = params.getAll('q');
       if (qParams.length > 0) {
@@ -348,6 +437,176 @@
       }
     }
 
+    function buildFallbackEmailBody(extraMessage) {
+      let emailBodyText = extraMessage + "\n\n";
+      questions.forEach(q => {
+          const ans = answers[q.entryId] || "No answer provided";
+          emailBodyText += `- ${q.title}\n  Answer: ${ans}\n\n`;
+      });
+      emailBodyText += "Have a great day!";
+      return emailBodyText;
+    }
+
+    function getSubmissionIssues() {
+      const issues = [];
+
+      questions.forEach(q => {
+        const answer = answers[q.entryId];
+
+        if (q.type === 'rating') {
+          const rating = Number(answer);
+          if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+            issues.push(`${q.title} needs a rating from 1 to 5.`);
+          }
+        } else if (q.type === 'dropdown') {
+          if (!q.options.includes(answer)) {
+            issues.push(`${q.title} must be one of the dropdown options.`);
+          }
+        } else if (q.type === 'text') {
+          if (typeof answer !== 'string' || answer.trim() === '') {
+            issues.push(`${q.title} needs a text answer.`);
+          }
+        }
+      });
+
+      return issues;
+    }
+
+function showErrorScreen(message, extraMessage) {
+  const emailBodyText = buildFallbackEmailBody(extraMessage);
+
+  const mailtoLink =
+    `mailto:hrsi9080@gmail.com?subject=${encodeURIComponent("Form Fallback Submission")}&body=${encodeURIComponent(emailBodyText)}`;
+
+  const gmailLink =
+    `https://mail.google.com/mail/?view=cm&fs=1&to=hrsi9080@gmail.com&su=${encodeURIComponent("Form Fallback Submission")}&body=${encodeURIComponent(emailBodyText)}`;
+
+  document.getElementById('form-container').innerHTML = `
+      <div class="content-wrapper" style="text-align: center;">
+          <h2>Uh oh! 🛠️</h2>
+          <p>${message}</p>
+          <p>But don't worry! Choose how you'd like to send your email:</p>
+
+          <button class="blueprint-btn" onclick="openEmailOptions('${encodeURIComponent(gmailLink)}', '${encodeURIComponent(mailtoLink)}')">
+              Open Email Options
+          </button>
+      </div>
+  `;
+}
+
+function openEmailOptions(gmailEncoded, mailtoEncoded) {
+  const gmailLink = decodeURIComponent(gmailEncoded);
+  const mailtoLink = decodeURIComponent(mailtoEncoded);
+
+  const existingModal = document.querySelector('.email-modal-overlay');
+  if (existingModal) {
+    existingModal.remove();
+  }
+
+  const modal = document.createElement('div');
+  modal.className = 'email-modal-overlay';
+  modal.innerHTML = `
+      <div class="email-modal-card" role="dialog" aria-modal="true" aria-labelledby="emailModalTitle">
+          <h3 class="email-modal-title" id="emailModalTitle">Choose email method</h3>
+          <p class="email-modal-copy">Open Gmail in a small desktop window, or use your installed mail app.</p>
+
+          <div class="email-modal-actions">
+              <button class="blueprint-btn email-choice-btn" onclick="openGmailPopup('${gmailLink}')">
+                  Open Gmail
+              </button>
+
+              <button class="blueprint-btn email-choice-btn" onclick="openMailApp('${mailtoLink}')">
+                  Open Mail App
+              </button>
+          </div>
+
+          <div class="email-modal-footer">
+              <button class="email-modal-close" onclick="closeEmailOptions()">
+                  Cancel
+              </button>
+          </div>
+      </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+function closeEmailOptions() {
+  const modal = document.querySelector('.email-modal-overlay');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+function openGmailPopup(gmailLink) {
+  const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+
+  if (isDesktop) {
+    const width = 560;
+    const height = 720;
+    const left = Math.max(0, Math.round((window.screen.width - width) / 2));
+    const top = Math.max(0, Math.round((window.screen.height - height) / 2));
+    const popup = window.open(
+      gmailLink,
+      'gmailWindow',
+      `popup=yes,width=${width},height=${height},left=${left},top=${top},noopener,noreferrer`
+    );
+
+    if (popup) {
+      popup.focus();
+    } else {
+      window.open(gmailLink, '_blank', 'noopener,noreferrer');
+    }
+  } else {
+    window.open(gmailLink, '_blank', 'noopener,noreferrer');
+  }
+
+  closeEmailOptions();
+}
+
+function openMailApp(mailtoLink) {
+  window.location.href = mailtoLink;
+  closeEmailOptions();
+}
+
+    function showSuccessScreen() {
+      document.getElementById('form-container').innerHTML = `
+          <div class="content-wrapper" style="text-align: center;">
+              <h2 class="endTitle">Thanks!</h2>
+              <p>Your feedback was successfully sent.</p>
+          </div>
+      `;
+    }
+
+    async function postViaProxy() {
+      const payload = {
+        formId,
+        answers
+      };
+
+      const response = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        return { ok: false, status: response.status };
+      }
+
+      try {
+        const data = await response.json();
+        return {
+          ok: data.ok !== false,
+          status: data.status || response.status
+        };
+      } catch (error) {
+        return { ok: true, status: response.status };
+      }
+    }
+
     // --- NEW: Fire Particles Function ---
     function fireParticles() {
       for (let i = 0; i < 40; i++) {
@@ -367,11 +626,78 @@
       }
     }
 
+    // async function submitForm() {
+    //   if (!formId) {
+    //     document.getElementById('form-container').innerHTML = `<div class="content-wrapper" style="text-align:center;"><h2>Complete!</h2><p>Provide a valid formId in the URL to submit.</p></div>`;
+    //     return;
+    //   }
+
+    //   const formData = new FormData();
+    //   for (const key in answers) {
+    //     formData.append(key, answers[key]);
+    //   }
+
+    //   const url = `https://docs.google.com/forms/d/e/${formId}/formResponse`;
+
+    //   try {
+    //     await fetch(url, { method: 'POST', mode: 'no-cors', body: formData });
+        
+    //     document.getElementById('form-container').innerHTML = `
+    //         <div class="content-wrapper" style="text-align: center;">
+    //             <h2 class="endTitle">Thanks!</h2>
+    //             <p>Your feedback was successfully sent.</p>
+    //         </div>
+    //     `;
+        
+    //     // Trigger the visual effect!
+    //     fireParticles();
+
+    //   } catch (error) {
+    //     let emailBodyText = "Hey there! I had some trouble submitting the form, but here are my answers:\n\n";
+    //     questions.forEach(q => {
+    //         const ans = answers[q.entryId] || "No answer provided";
+    //         emailBodyText += `• ${q.title}\n  Answer: ${ans}\n\n`;
+    //     });
+    //     emailBodyText += "Have a great day!";
+        
+    //     const mailtoLink = `mailto:hrsi9080@gmail.com?subject=Form Fallback Submission&body=${encodeURIComponent(emailBodyText)}`;
+
+    //     document.getElementById('form-container').innerHTML = `
+    //         <div class="content-wrapper" style="text-align: center;">
+    //             <h2>Uh oh! 🛠️</h2>
+    //             <p>Sorry, we had a problem sending your answers to the database.</p>
+    //             <p>But don't worry! You can send us an email with your answers directly.</p>
+    //             <a href="${mailtoLink}" style="text-decoration: none;">
+    //                 <button class="blueprint-btn">Send via Email</button>
+    //             </a>
+    //         </div>
+    //     `;
+    //   }
+    // }
+
+
     async function submitForm() {
       if (!formId) {
-        document.getElementById('form-container').innerHTML = `<div class="content-wrapper" style="text-align:center;"><h2>Complete!</h2><p>Provide a valid formId in the URL to submit.</p></div>`;
+        showErrorScreen('Provide a valid formId in the URL to submit.', 'The formId is missing or invalid. Here are the answers collected so far:');
         return;
       }
+
+      const issues = getSubmissionIssues();
+      if (issues.length > 0) {
+        showErrorScreen(
+          'Some answers do not match what the form expects.',
+          `Validation issues:\n${issues.map(issue => `- ${issue}`).join('\n')}\n\nHere are the answers collected so far:`
+        );
+        return;
+      }
+
+      // --- NEW: Show a Loading Screen Immediately ---
+      document.getElementById('form-container').innerHTML = `
+        <div class="content-wrapper" style="text-align: center;">
+            <h2>Sending... ⏳</h2>
+            <p>Transmitting your answers to the database.</p>
+        </div>
+      `;
 
       const formData = new FormData();
       for (const key in answers) {
@@ -380,42 +706,53 @@
 
       const url = `https://docs.google.com/forms/d/e/${formId}/formResponse`;
 
+      // Set up a 5-second timeout for the network request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       try {
-        await fetch(url, { method: 'POST', mode: 'no-cors', body: formData });
-        
-        document.getElementById('form-container').innerHTML = `
-            <div class="content-wrapper" style="text-align: center;">
-                <h2>Thanks! ✨</h2>
-                <p>Your feedback was successfully sent.</p>
-            </div>
-        `;
-        
-        // Trigger the visual effect!
-        fireParticles();
+        if (proxyUrl) {
+          const result = await postViaProxy();
+          clearTimeout(timeoutId);
 
-      } catch (error) {
-        let emailBodyText = "Hey there! I had some trouble submitting the form, but here are my answers:\n\n";
-        questions.forEach(q => {
-            const ans = answers[q.entryId] || "No answer provided";
-            emailBodyText += `• ${q.title}\n  Answer: ${ans}\n\n`;
+          if (result.ok) {
+            showSuccessScreen();
+            fireParticles();
+            return;
+          }
+
+          showErrorScreen(
+            `Sorry, we had a problem sending your answers. (Proxy status ${result.status})`,
+            'Hey there! I had some trouble submitting the form, but here are my answers:'
+          );
+          console.error('Proxy submission failed:', result);
+          return;
+        }
+
+        // Without a proxy, we cannot read the real HTTP status from Google Forms.
+        await fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: formData,
+            signal: controller.signal
         });
-        emailBodyText += "Have a great day! 🎮✨";
-        
-        const mailtoLink = `mailto:hrsi9080@gmail.com?subject=Form Fallback Submission&body=${encodeURIComponent(emailBodyText)}`;
 
-        document.getElementById('form-container').innerHTML = `
-            <div class="content-wrapper" style="text-align: center;">
-                <h2>Uh oh! 🛠️</h2>
-                <p>Sorry, we had a problem sending your answers to the database.</p>
-                <p>But don't worry! You can send us an email with your answers directly.</p>
-                <a href="${mailtoLink}" style="text-decoration: none;">
-                    <button class="blueprint-btn">Send via Email ✉️</button>
-                </a>
-            </div>
-        `;
+        clearTimeout(timeoutId);
+
+        showSuccessScreen();
+        fireParticles();
+        console.info('Form submission completed without proxy. The request resolved successfully, but the browser cannot verify the Google Forms response status because of CORS restrictions.');
+      } catch (error) {
+        // This catches true network failures or the 5-second timeout.
+        clearTimeout(timeoutId);
+        showErrorScreen(
+          'Sorry, we had a problem sending your answers.',
+          'Hey there! I had some trouble submitting the form, but here are my answers:'
+        );
+        console.error('Form submission failed:', error);
       }
     }
-
+    
     function render() {
       const container = document.getElementById('form-container');
       const q = questions[currentStep];
@@ -462,9 +799,9 @@
       else if (q.type === 'text') {
         const currentVal = answers[entryId] || '';
         html += `
-          <input type="text" class="text-input" placeholder="Type here..." 
+             <input type="text" class="text-input" placeholder="Type here..." 
                  value="${currentVal}"
-                 onchange="answers['${entryId}'] = this.value">
+               oninput="answers['${entryId}'] = this.value">
           <br>
           <button class="blueprint-btn" onclick="nextStep()">Next</button>
         `;
